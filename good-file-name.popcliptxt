@@ -3,19 +3,59 @@
 // icon: circle filled GFN
 // language: javascript
 
+// MARK: Constants
+
+// MM\DD\YYYY or MM/DD/YYYY or MM-DD-YYYY or MM.DD.YYYY
+// MM or DD can be 1 or 2 digits
+const re_numerical_date = new RegExp(
+  /\b(?:\d{1,2}|\d{4})[\\\/\.-](\d{1,2})[\\\/\.-](\d{2}|\d{4})\b/g,
+);
+
+const re_resolution = new RegExp(/\b(?:\d{3,4}p)\b/g);
+
+const to_bracketize = [
+  re_resolution,
+  [/\bBlu-?Ray\b/, 'BluRay'],
+  [/\bBR\b/, 'BR'],
+  [/\bBRRip\b/, 'BRRip'],
+  [/\bDVD\b/, 'DVD'],
+  [/\bDVDRip\b/, 'DVDRip'],
+  [/\bHD\b/, 'HD'],
+  [/\bHDTV\b/, 'HDTV'],
+  [/\bWEB\b/, 'WEB'],
+  [/\bWEB-?DL\b/, 'WEBDL'],
+  [/\bWEB-?R\b/, 'WEBR'],
+  [/\bWEB-?Rip\b/, 'WEBRip'],
+  [/\bHDRip\b/, 'HDRip'],
+  [/\bRemux\b/, 'Remux'],
+  [/\bVHS\b/, 'VHS'],
+];
+
+const to_standardize = [[/\bS(\d{1,2})E(\d{1,2})\b/, 's$1e$2']];
+
 // MARK: Functions
 
-const strToISO8601 = date => {
+function strToISO8601(date) {
   const d = new Date(date);
   return d.toISOString().split('T')[0];
-};
+}
 
 // MARK: Main
 
 let fn = popclip.input.text;
 
 // Make all dates ISO8601
-fn = fn.replace(/(\d{2,4})[\/\.-](\d{2})[\/\.-](\d{2,4})/g, strToISO8601);
+fn = fn.replace(re_numerical_date, strToISO8601);
+
+// Bracketize certain strings
+for (const [re, replacement] of to_bracketize) {
+  fn = fn.replace(re, `(${replacement})`);
+}
+
+// Standardize certain strings
+for (const [re, replacement] of to_standardize) {
+  fn = fn.replace(re, replacement);
+}
 
 // Replace with hyphens intelligently where possible
 fn = fn.replace(/(\S)\b:(\s)/g, '$1 - $2');
@@ -29,7 +69,7 @@ fn = fn.replace(/^\.*(.+?)/g, '$1');
 // Remove trailing periods
 fn = fn.replace(/(.+?)\.*$/g, '$1');
 
-// No slashes (No unintentional directories or anything that looks like it)
+// Replace all slashes (No unintentional directories or anything that looks like it)
 fn = fn.replace(/[\\\/]/g, ' ');
 
 // Replace n-dashes or m-dashes with hyphens (This ain't typography)
@@ -40,6 +80,15 @@ fn = fn.replace(/︱/g, '-'); // PRESENTATION FORM FOR VERTICAL EM DASH
 fn = fn.replace(/﹘/g, '-'); // SMALL EM DASH
 fn = fn.replace(/⸺/g, '-'); // TWO-EM DASH
 fn = fn.replace(/⸻/g, '-'); // THREE-EM DASH
+fn = fn.replace(/|/g, '-'); // PIPE (This just someone being cute)
+
+// Parens+brackets should have spaces before and after
+// (but not between the parens+brackets and the content)
+fn = fn.replace(/[\(\[]]\s*/g, ' ('); // Open
+fn = fn.replace(/\s*[\)\]]/g, ') '); // Close
+
+// But Abutting square brackets should have no space between them
+fn = fn.replace(/\]\s+\[/g, '][');
 
 // The only whitespace should be a (single) regular space
 fn = fn.replace(/\s+/g, ' ');
