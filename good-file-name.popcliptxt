@@ -1,0 +1,50 @@
+// #popclip
+// name: Good File Name
+// icon: circle filled GFN
+// language: javascript
+
+// MARK: Functions
+
+const strToISO8601 = date => {
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
+};
+
+// MARK: Main
+
+let fn = popclip.input.text;
+
+// Make all dates ISO8601
+fn = fn.replace(/(\d{2,4})[\/\.-](\d{2})[\/\.-](\d{2,4})/g, strToISO8601);
+
+// Replace with hyphens intelligently where possible
+fn = fn.replace(/(\S)\b:(\s)/g, '$1 - $2');
+
+// All other colons are Removed
+fn = fn.replace(/:+/g, '');
+
+// Remove leading periods
+fn = fn.replace(/^\.*(.+?)/g, '$1');
+
+// Remove trailing periods
+fn = fn.replace(/(.+?)\.*$/g, '$1');
+
+// No slashes (No unintentional directories or anything that looks like it)
+fn = fn.replace(/[\\\/]/g, ' ');
+
+// Replace n-dashes or m-dashes with hyphens (This ain't typography)
+fn = fn.replace(/–/g, '-'); // EN DASH
+fn = fn.replace(/︲/g, '-'); // PRESENTATION FORM FOR VERTICAL EN DASH
+fn = fn.replace(/—/g, '-'); // EM DASH
+fn = fn.replace(/︱/g, '-'); // PRESENTATION FORM FOR VERTICAL EM DASH
+fn = fn.replace(/﹘/g, '-'); // SMALL EM DASH
+fn = fn.replace(/⸺/g, '-'); // TWO-EM DASH
+fn = fn.replace(/⸻/g, '-'); // THREE-EM DASH
+
+// The only whitespace should be a (single) regular space
+fn = fn.replace(/\s+/g, ' ');
+
+// No leading or trailing whitespace
+fn = fn.trim();
+
+popclip.copyText(fn);

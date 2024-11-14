@@ -1,0 +1,46 @@
+// #popclip
+// name: Title Case
+// icon: square filled Tc
+// language: javascript
+
+const minorWords = [
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'but',
+  'by',
+  'for',
+  'if',
+  'in',
+  'nor',
+  'of',
+  'on',
+  'or',
+  'so',
+  'the',
+  'to',
+  'up',
+  'yet',
+];
+
+const output = popclip.input.text
+  .split(' ')
+  .map((word, index, words) => {
+    // Capitalize the first word,
+    // the first word after a colon,
+    // and all major words
+    if (
+      index === 0 ||
+      words[index - 1].endsWith(':') ||
+      !minorWords.includes(word.toLowerCase())
+    ) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    } else {
+      return word.toLowerCase();
+    }
+  })
+  .join(' ');
+
+popclip.pasteText(output);

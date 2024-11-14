@@ -1,0 +1,90 @@
+// #popclip
+// name: Fix Dir Name
+// icon: square filled f.d
+// language: javascript
+
+const minorWords = [
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'but',
+  'by',
+  'for',
+  'if',
+  'in',
+  'nor',
+  'of',
+  'on',
+  'or',
+  'so',
+  'the',
+  'to',
+  'up',
+  'yet',
+];
+
+let dn = popclip.input.text;
+// let dn = 'this.is.a.directory.name.without.spaces.from.dj.Tieto.mkv';
+
+// Only process file names witout spaces
+if (dn.includes(' ')) return;
+
+const idxLastDot = dn.lastIndexOf('.');
+
+const spaceCandidateCnts = [...dn].reduce(
+  (acc, curr) => {
+    if (acc.has(curr)) acc.set(curr, acc.get(curr) + 1);
+    return acc;
+  },
+  new Map([
+    ['.', 0],
+    ['-', 0],
+    ['_', 0],
+  ]),
+);
+
+// console.log(spaceCandidateCnts);
+
+// Sort the map by values in descending order
+const sortedSpaceCandidateCnts = [
+  ...new Map([...spaceCandidateCnts.entries()].sort((a, b) => b[1] - a[1])),
+];
+
+// console.log(sortedSpaceCandidateCnts);
+
+// If no candidates are found, return
+if (0 === sortedSpaceCandidateCnts[0][1]) return;
+
+const spaceChar = sortedSpaceCandidateCnts[0][0];
+
+dn = dn.replaceAll(spaceChar, ' ');
+
+// Make Title Case
+dn = dn
+  .split(' ')
+  .map((word, index, words) => {
+    // Capitalize the first word,
+    // the first word after a colon,
+    // and all major words
+    if (
+      index === 0 ||
+      words[index - 1].endsWith(':') ||
+      !minorWords.includes(word.toLowerCase())
+    ) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    } else {
+      return word.toLowerCase();
+    }
+  })
+  .join(' ');
+
+// Normalize whitespace
+dn = dn.replace(/\s{2,}/g, ' ');
+
+// Remove any leading and trailing whitespace
+dn = dn.trim();
+
+popclip.pasteText(dn);
+// console.log(dn);

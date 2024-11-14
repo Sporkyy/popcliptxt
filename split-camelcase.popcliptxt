@@ -1,0 +1,10 @@
+// #popclip
+// name: Split CamelCase
+// icon: square filled cC
+// language: javascript
+
+const input = popclip.input.text;
+
+const output = input.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+popclip.pasteText(output);
