@@ -8,30 +8,52 @@
 // MM\DD\YYYY or MM/DD/YYYY or MM-DD-YYYY or MM.DD.YYYY
 // MM or DD can be 1 or 2 digits
 const re_numerical_date = new RegExp(
-  /\b(?:\d{1,2}|\d{4})[\\\/\.-](\d{1,2})[\\\/\.-](\d{2}|\d{4})\b/g,
+  /\b(?:\d{1,2}|\d{4})[\\\/\.-](\d{1,2})[\\\/\.-](\d{1,2}|\d{4})\b/g,
 );
 
-const re_resolution = new RegExp(/\b(?:\d{3,4}p)\b/g);
-
 const to_bracketize = [
-  re_resolution,
-  [/\bBlu-?Ray\b/, 'BluRay'],
-  [/\bBR\b/, 'BR'],
-  [/\bBRRip\b/, 'BRRip'],
-  [/\bDVD\b/, 'DVD'],
-  [/\bDVDRip\b/, 'DVDRip'],
-  [/\bHD\b/, 'HD'],
-  [/\bHDTV\b/, 'HDTV'],
-  [/\bWEB\b/, 'WEB'],
-  [/\bWEB-?DL\b/, 'WEBDL'],
-  [/\bWEB-?R\b/, 'WEBR'],
-  [/\bWEB-?Rip\b/, 'WEBRip'],
-  [/\bHDRip\b/, 'HDRip'],
-  [/\bRemux\b/, 'Remux'],
-  [/\bVHS\b/, 'VHS'],
+  [/\b(\d{3,4})p\b/gi, '$1p'],
+  [/\bBlue?-?Ray\b/gi, 'BluRay'],
+  [/\bBR\b/gi, 'BR'],
+  [/\bBR-?Rip\b/gi, 'BRRip'],
+  [/\bDVD\b/gi, 'DVD'],
+  [/\bDVD-?Rip\b/gi, 'DVDRip'],
+  [/\bHD\b/gi, 'HD'],
+  [/\bHD-?Rip\b/gi, 'HDRip'],
+  [/\bHDTV\b/gi, 'HDTV'],
+  [/\bWEB\b/gi, 'WEB'],
+  [/\bWEB-?DL\b/gi, 'WEBDL'],
+  [/\bWEB-?R\b/gi, 'WEBR'],
+  [/\bWEB-?Rip\b/gi, 'WEBRip'],
+  [/\bRemux\b/gi, 'Remux'],
+  [/\bVHS\b/gi, 'VHS'],
 ];
 
-const to_standardize = [[/\bS(\d{1,2})E(\d{1,2})\b/, 's$1e$2']];
+const to_standardize = [
+  [/–/g, '-'], // EN DASH
+  [/︲/g, '-'], // PRESENTATION FORM FOR VERTICAL EN DASH
+  [/—/g, '-'], // EM DASH
+  [/︱/g, '-'], // PRESENTATION FORM FOR VERTICAL EM DASH
+  [/﹘/g, '-'], // SMALL EM DASH
+  [/⸺/g, '-'], // TWO-EM DASH
+  [/⸻/g, '-'], // THREE-EM DASH
+  [/―/g, '-'], // HORIZONTAL BAR
+  [/﹣/g, '-'], // SMALL HYPHEN-MINUS
+  [/－/g, '-'], // FULLWIDTH HYPHEN-MINUS
+  [/\bS(\d{1,2})E(\d{1,2})\b/gi, 's$1e$2'], // Smart colon to hyphen
+  [/(\S)\b:(\s)/g, ''], // Remove all other colons
+  [/:+/g, ''], // Remove leading periods
+  [/^\.*(.+?)/g, '$1'], // Remove trailing periods
+  [/[\/\\]/g, ' '], // All slashes to spaces
+  [/[\(\[]]\s*/g, ' ('], // Brackets have a space before
+  [/\s*[\)\]]/g, ') '], // Brackets have a space after
+  [/\]\s+\[/g, ']['], // Subsequentsquare brackets
+  [/|/g, '-'], // PIPE (This just someone being cute)
+  // ⬇️ This should probably always be penultimate
+  [/[:\\\/]/g, '_'], // Remove illegal/unwanted characters
+  // ⬇️ This should probably always be ultiate
+  [/\s+/g, ' '], // Normalize all whitespace to one space
+];
 
 // MARK: Functions
 
@@ -56,42 +78,6 @@ for (const [re, replacement] of to_bracketize) {
 for (const [re, replacement] of to_standardize) {
   fn = fn.replace(re, replacement);
 }
-
-// Replace with hyphens intelligently where possible
-fn = fn.replace(/(\S)\b:(\s)/g, '$1 - $2');
-
-// All other colons are Removed
-fn = fn.replace(/:+/g, '');
-
-// Remove leading periods
-fn = fn.replace(/^\.*(.+?)/g, '$1');
-
-// Remove trailing periods
-fn = fn.replace(/(.+?)\.*$/g, '$1');
-
-// Replace all slashes (No unintentional directories or anything that looks like it)
-fn = fn.replace(/[\\\/]/g, ' ');
-
-// Replace n-dashes or m-dashes with hyphens (This ain't typography)
-fn = fn.replace(/–/g, '-'); // EN DASH
-fn = fn.replace(/︲/g, '-'); // PRESENTATION FORM FOR VERTICAL EN DASH
-fn = fn.replace(/—/g, '-'); // EM DASH
-fn = fn.replace(/︱/g, '-'); // PRESENTATION FORM FOR VERTICAL EM DASH
-fn = fn.replace(/﹘/g, '-'); // SMALL EM DASH
-fn = fn.replace(/⸺/g, '-'); // TWO-EM DASH
-fn = fn.replace(/⸻/g, '-'); // THREE-EM DASH
-fn = fn.replace(/|/g, '-'); // PIPE (This just someone being cute)
-
-// Parens+brackets should have spaces before and after
-// (but not between the parens+brackets and the content)
-fn = fn.replace(/[\(\[]]\s*/g, ' ('); // Open
-fn = fn.replace(/\s*[\)\]]/g, ') '); // Close
-
-// But Abutting square brackets should have no space between them
-fn = fn.replace(/\]\s+\[/g, '][');
-
-// The only whitespace should be a (single) regular space
-fn = fn.replace(/\s+/g, ' ');
 
 // No leading or trailing whitespace
 fn = fn.trim();
