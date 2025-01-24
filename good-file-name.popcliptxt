@@ -84,8 +84,14 @@ const to_standardize = [
 // MARK: Functions
 
 function strToISO8601(date) {
-  const d = new Date(date);
-  return d.toISOString().split('T')[0];
+  const objDate = new Date(date);
+  let strDate = date;
+  try {
+    strDate = objDate.toISOString().split('T')[0];
+  } catch (e) {
+    // Do nothing
+  }
+  return strDate;
 }
 
 // MARK: Main
