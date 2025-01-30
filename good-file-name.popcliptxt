@@ -5,46 +5,7 @@
 
 // MARK: Constants
 
-// MM\DD\YYYY or MM/DD/YYYY or MM-DD-YYYY or MM.DD.YYYY
-// MM or DD can be 1 or 2 digits
-const re_numerical_date = new RegExp(
-  /\b(?:\d{1,2}|\d{4})[\\\/\.-](\d{1,2})[\\\/\.-](\d{1,2}|\d{4})\b/gi,
-);
-
-// const to_bracketize = [
-//   [/\b(\d{3,4})p\b/gi, '$1p'],
-//   [/\bBlue?-?Ray\b/gi, 'BluRay'],
-//   [/\bBR\b/gi, 'BR'],
-//   [/\bBR-?Rip\b/gi, 'BRRip'],
-//   [/\bDVD\b/gi, 'DVD'],
-//   [/\bDVD-?Rip\b/gi, 'DVDRip'],
-//   [/\bHD\b/gi, 'HD'],
-//   [/\bHD-?Rip\b/gi, 'HDRip'],
-//   [/\bHDTV\b/gi, 'HDTV'],
-//   [/\bWEB\b/gi, 'WEB'],
-//   [/\bWEB-?DL\b/gi, 'WEBDL'],
-//   [/\bWEB-?R\b/gi, 'WEBR'],
-//   [/\bWEB-?Rip\b/gi, 'WEBRip'],
-//   [/\bRemux\b/gi, 'Remux'],
-//   [/\bVHS\b/gi, 'VHS'],
-// ];
-
-const to_standardize = [
-  // Hyphens
-  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  [/–/gi, '-'], // EN DASH
-  [/︲/gi, '-'], // PRESENTATION FORM FOR VERTICAL EN DASH
-  [/—/gi, '-'], // EM DASH
-  [/︱/gi, '-'], // PRESENTATION FORM FOR VERTICAL EM DASH
-  [/﹘/gi, '-'], // SMALL EM DASH
-  [/⸺/gi, '-'], // TWO-EM DASH
-  [/⸻/gi, '-'], // THREE-EM DASH
-  [/―/gi, '-'], // HORIZONTAL BAR
-  [/﹣/gi, '-'], // SMALL HYPHEN-MINUS
-  [/－/gi, '-'], // FULLWIDTH HYPHEN-MINUS
-  [/\|/g, '-'], // PIPE (This just someone being cute)
-  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+const regexReplacements = [
   // Periods
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   [/^\.+(.+?)/gi, '$1'], // Remove leading periods
@@ -53,61 +14,161 @@ const to_standardize = [
 
   // Colons
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  [/:{2,}/gi, ':'], // Normalize multiple colons to one
+  [/\b:\s\b/gi, ' - '], // Replace grammatical colons with hyphens
   [/:/gi, ''], // Remove all other colons
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-  // Parenthes/Brackets
+  // Parentheses/Brackets
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   [/[\(\[]\s*/gi, ' ('], // Standardize opening
   [/\s*[\)\]]/gi, ') '], // Standardize closing
-  // This makes sense from an *arr media perspective
-  // But it's not general as the rests of what I'm going for
-  // [/\]\s+\[/g, ']['], // Squeeze spaces from bracketed text
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  [/\bS(\d{1,2})E(\d{1,2})\b/gi, 's$1e$2'], // Season+Episode
+  [/\bS\s?(\d{1})\s?E\s?(\d{1})\b/gi, 's0$1e0$2'], // Season+Episode
+  [/\bS\s?(\d{1})\s?E\s?(\d{2})\b/gi, 's0$1e$2'], // Season+Episode
+  [/\bS\s?(\d{2})\s?E\s?(\d{1})\b/gi, 's$1e0$2'], // Season+Episode
+  [/\bS\s?(\d{2})\s?E\s?(\d{2})\b/gi, 's$1e$2'], // Season+Episode
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-  // ⬇️ This should probably always be penultimate
-  // Underscores are changed to spaces by Jdownloader2, thus spaces
+  // Day Month Year
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  [/[:\\\/]/gi, ' '], // Remove all other slahes+colons
+  [
+    // 1970-2029
+    /\b(0[1-9]|[12][0-9]|3[01])\D{,3}\b(0[1-9]|1[012])\D{,3}(19[789][0-9]|20[012][0-9])\b/gi,
+    '$3-$2-$1',
+  ],
+  [
+    // (19)30-(19)99
+    /\b(0[1-9]|[12][0-9]|3[01])\D{,3}(0[1-9]|1[012])\D{,3}([3456789][0-9])\b/gi,
+    '19$3-$2-$1',
+  ],
+  [
+    // (20)00-(20)29
+    /\b(0[1-9]|[12][0-9]|3[01])\D{,3}(0[1-9]|1[012])\D{,3}([012][0-9])\b/gi,
+    '20$3-$2-$1',
+  ],
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-  // ⬇️ This should probably always be ultiate
+  // Month Day Year
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  [/\s+/gi, ' '], // Normalize all whitespace to one space
+  [
+    // 1970-2029
+    /\b(0[1-9]|1[012])\D{,3}(0[1-9]|[12][0-9]|3[01])\D{,3}(19[789][0-9]|20[012][0-9])\b/gi,
+    '$3-$2-$1',
+  ],
+  [
+    // (19)30-(19)99
+    /\b(0[1-9]|1[012])\D{,3}(0[1-9]|[12][0-9]|3[01])\D{,3}([3456789][0-9])\b/gi,
+    '19$3-$2-$1',
+  ],
+  [
+    // (20)00-(20)29
+    /\b(0[1-9]|1[012])\D{,3}(0[1-9]|[12][0-9]|3[01])\D{,3}([012][0-9])\b/gi,
+    '20$3-$2-$1',
+  ],
+  [
+    /\b(?:JAN(?:UARY)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-01-$1',
+  ],
+  [
+    /\b(?:FEB(?:RUARY)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-02-$1',
+  ],
+  [
+    /\b(?:MAR(?:CH)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-03-$1',
+  ],
+  [
+    /\b(?:APR(?:IL)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-04-$1',
+  ],
+  [
+    /\b(?:MAY)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-05-$1',
+  ],
+  [
+    /\b(?:JUNE?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-06-$1',
+  ],
+  [
+    /\b(?:JUL(?:ULY)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-07-$1',
+  ],
+  [
+    /\b(?:AUG(?:UST)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-08-$1',
+  ],
+  [
+    /\b(SEPT?(?:EMBER)?)\D{,3}(0?[1-9]|[12][0-9]|3[01]),?\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-09-$1',
+  ],
+  [
+    /\b(?:OCT(?:OBER)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-10-$1',
+  ],
+  [
+    /\b(?:NOV(?:EMBER)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-11-$1',
+  ],
+  [
+    /\b(?:DEC(?:ECEMBER)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
+    '$2-12-$1',
+  ],
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+  // Year Month Day
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  [
+    // 1970-2029
+    /\b(19[789][0-9]|20[012][0-9])\D{,3}(0[1-9]|1[012])\D{,3}(0[1-9]|[12][0-9]|3[01])\b/gi,
+    '$1-$2-$3',
+  ],
+  [
+    // (19)30-(19)99
+    /\b([3456789][0-9])\D{,3}(0[1-9]|1[012])\D{,3}(0[1-9]|[12][0-9]|3[01])\b/gi,
+    '19$1-$2-$3',
+  ],
+  [
+    // (20)00-(20)29
+    /\b([012][0-9])\D{,3}(0[1-9]|1[012])\D{,3}(0[1-9]|[12][0-9]|3[01])\b/gi,
+    '20$1-$2-$3',
+  ],
+  [
+    // (20)00-(20)29
+    (/\b(\d{4})-(\d{2})-(\d{2})/gi, ' - $1-$2-$3 - '),
+  ][
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    // ⬇️ This should probably always be penultimate
+    // Underscores are changed to spaces by Jdownloader2, thus spaces
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    (/[:\\\/]+/gi, ' ')
+  ][
+    // Remove all other slahes+colons
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    // ⬇️ This should probably always be ultiate
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    (/\s+/gi, ' ')
+  ], // Normalize all whitespace to one space
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ];
 
 // MARK: Functions
 
 function strToISO8601(date) {
-  const objDate = new Date(date);
-  let strDate = date;
-  try {
-    strDate = objDate.toISOString().split('T')[0];
-  } catch (e) {
-    // Do nothing
-  }
-  return strDate;
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
 }
 
 // MARK: Main
 
 let fn = popclip.input.text;
 
-// Make all dates ISO8601
-fn = fn.replace(re_numerical_date, strToISO8601);
-
-// Bracketize certain strings
-// for (const [re, replacement] of to_bracketize) {
-//   fn = fn.replace(re, `[${replacement}]`);
-// }
-
 // Standardize certain strings
-for (const [re, replacement] of to_standardize) {
+for (const [re, replacement] of regexReplacements) {
   fn = fn.replace(re, replacement);
 }
 
