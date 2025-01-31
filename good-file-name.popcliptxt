@@ -69,10 +69,12 @@ const regexReplacements = [
     '20$3-$2-$1',
   ],
   [
+    // January DD YY(YY)
     /\b(?:JAN(?:UARY)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
     '$2-01-$1',
   ],
   [
+    // February DD YY(YY)
     /\b(?:FEB(?:RUARY)?)\D{,3}(0?[1-9]|[12][0-9]|3[01])\D{,3}(199[0-9]|20[0-2][0-9])\b/gi,
     '$2-02-$1',
   ],
@@ -136,32 +138,24 @@ const regexReplacements = [
     '20$1-$2-$3',
   ],
   [
-    // (20)00-(20)29
-    (/\b(\d{4})-(\d{2})-(\d{2})/gi, ' - $1-$2-$3 - '),
-  ][
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    // YYYY-MM-DD
+    /\b(\d{4})\D{,3}(\d{2})\D{,3}(\d{2})\b/gi,
+    ' - $1-$2-$3 - ',
+  ],
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-    // ⬇️ This should probably always be penultimate
-    // Underscores are changed to spaces by Jdownloader2, thus spaces
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    (/[:\\\/]+/gi, ' ')
-  ][
-    // Remove all other slahes+colons
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // ⬇️ This should probably always be penultimate
+  // Remove all other slahes+colons
+  // Underscores are changed to spaces by Jdownloader2, thus spaces
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  [/[:\\\/]+/gi, ' '],
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-    // ⬇️ This should probably always be ultiate
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    (/\s+/gi, ' ')
-  ], // Normalize all whitespace to one space
+  // ⬇️ This should probably always be ultimate
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  [/\s+/gi, ' '], // Normalize all whitespace to one space
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ];
-
-// MARK: Functions
-
-function strToISO8601(date) {
-  const d = new Date(date);
-  return d.toISOString().split('T')[0];
-}
 
 // MARK: Main
 
